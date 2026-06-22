@@ -1,7 +1,11 @@
 from fastapi import FastAPI
+import logging
+
 from app.database import engine
 from app.models import Base
 from app.routes.task_routes import router as task_router
+
+logging.basicConfig(level=logging.INFO)
 
 Base.metadata.create_all(bind=engine)
 

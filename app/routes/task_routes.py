@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import logging
 
 from app.database import SessionLocal
 from app.models import Task
 from app.schemas.task_schema import TaskCreate, TaskUpdate, TaskResponse
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 def get_db():
@@ -18,6 +21,8 @@ def get_db():
 
 @router.post("/tasks", response_model=TaskResponse)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+    logger.info("Creating a new task")
+
     new_task = Task(
         title=task.title,
         description=task.description,
@@ -29,6 +34,8 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+
+    logger.info("Task created successfully")
 
     return new_task
 
@@ -53,6 +60,7 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == task_id).first()
 
     if task is None:
+        logger.info("Task not found")
         raise HTTPException(status_code=404, detail="Task not found")
 
     return task
@@ -63,6 +71,7 @@ def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get
     task = db.query(Task).filter(Task.id == task_id).first()
 
     if task is None:
+        logger.info("Task not found")
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.title = task_update.title
@@ -72,6 +81,8 @@ def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get
     db.commit()
     db.refresh(task)
 
+    logger.info("Task updated successfully")
+
     return task
 
 
@@ -80,10 +91,13 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == task_id).first()
 
     if task is None:
+        logger.info("Task not found")
         raise HTTPException(status_code=404, detail="Task not found")
 
     db.delete(task)
     db.commit()
+
+    logger.info("Task deleted successfully")
 
     return {"message": "Task deleted successfully"}
 
@@ -93,11 +107,14 @@ def complete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == task_id).first()
 
     if task is None:
+        logger.info("Task not found")
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.completed = True
 
     db.commit()
     db.refresh(task)
+
+    logger.info("Task marked complete successfully")
 
     return task
