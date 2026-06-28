@@ -1,13 +1,16 @@
 services:
   db:
-    image: postgres:15
+    image: postgres:16
     container_name: task_manager_db
+    restart: always
     environment:
-      POSTGRES_DB: task_manager_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: "    "
+      POSTGRES_DB: task_manager_db
     ports:
       - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d task_manager_db"]
       interval: 5s
@@ -17,10 +20,13 @@ services:
   api:
     build: .
     container_name: task_manager_api
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:%20%20%20%20@db:5432/task_manager_db
+
+volumes:
+  postgres_data:
